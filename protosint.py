@@ -8,12 +8,10 @@ import ipaddress
 
 #Color setup
 class bcolors:
-    OKGREEN = '\033[92m'
-    WARNING = '\033[93m'
-    FAIL = '\033[91m'
-    BOLD = '\033[1m'
-    ENDC = '\033[0m'
-
+    OKGREEN = '\x1b[92m'
+    WARNING = '\x1b[93m'
+    FAIL = '\x1b[91m'
+    ENDC = '\x1b[0m'
 
 def printAscii():
 	"""
@@ -23,8 +21,8 @@ def printAscii():
    ___           _            _       _   
   / _ \_ __ ___ | |_ ___  ___(_)_ __ | |_ 
  / /_)/ '__/ _ \| __/ _ \/ __| | '_ \| __|
-/ ___/| | | (_) | || (_) \__ \ | | | | |_ 
-\/    |_|  \___/ \__\___/|___/_|_| |_|\__|
+/ ___/| | | (_) | || (_) \__ \ | | | | |_  (author: pixelbubble)
+\/    |_|  \___/ \__\___/|___/_|_| |_|\__| (forked by alol)
 	                                          
 	""")
 
@@ -36,58 +34,54 @@ def checkProtonAPIStatut():
 	"""
 	requestProton_mail_statut = requests.get('https://api.protonmail.ch/pks/lookup?op=index&search=test@protonmail.com')
 	if requestProton_mail_statut.status_code == 200:
-		print("Protonmail API is " + f"{bcolors.BOLD}ONLINE{bcolors.ENDC}")
+		print(f"Protonmail API is {bcolors.OKGREEN}ONLINE{bcolors.ENDC}")
 	else:
-		print("Protonmail API is " + f"{bcolors.BOLD}OFFLINE{bcolors.ENDC}")
+		print(f"Protonmail API is {bcolors.FAIL}OFFLINE{bcolors.ENDC}")
 
 	requestProton_vpn_statut = requests.get('https://api.protonmail.ch/vpn/logicals')
 	if requestProton_vpn_statut.status_code == 200:
-		print("Protonmail VPN is " + f"{bcolors.BOLD}ONLINE{bcolors.ENDC}")
+		print(f"Protonmail VPN is {bcolors.OKGREEN}ONLINE{bcolors.ENDC}")
 	else:
-		print("Protonmail VPN is " + f"{bcolors.BOLD}OFFLINE{bcolors.ENDC}")
+		print(f"Protonmail VPN is {bcolors.FAIL}OFFLINE{bcolors.ENDC}")
 
 
 def printWelcome():
 	welcome = """
 Let's take a look at your target:
-1 - Test the validity of one protonmail account
-2 - Try to find if your target have a protonmail account
-3 - Find if your IP is currently affiliate to ProtonVPN
+1 - Test the validity of a protonmail account
+2 - Try to find if your target has a protonmail account
+3 - Find if an IP is currently affiliated to ProtonVPN
+
+[q]uit
 """
 	print(welcome)
 
 
 def checkValidityOneAccount():
 	"""
-	PROGRAM 1 : Test the validity of one protonmail account
+	PROGRAM 1 : Test the validity of a protonmail account
 	
 	"""
-	invalidEmail = True
 	regexEmail = "([a-zA-Z0-9_.+-]+@[a-zA-Z0-9-]+\.[a-zA-Z0-9-.]+)"
 	
 	print("You want to know if a protonmail email is real ?")
-	while invalidEmail:
-		#Input
-		mail = input("Give me your email: ")
-		#Text if the input is valid
-		if(re.search(regexEmail,mail)):
-			invalidEmail = False
-		else:
-			print("Invalid Email")
-			invalidEmail = True
+	mail = input("Give me your email: ")
+
+	if not re.search(regexEmail,mail):
+		mail+= "@protonmail.com"
 
 	#Check if the protonmail exist : valid / not valid
-	requestProton = requests.get('https://api.protonmail.ch/pks/lookup?op=index&search='+str(mail))
+	requestProton = requests.get('https://api.protonmail.ch/pks/lookup?op=index&search='+mail)
 	bodyResponse = requestProton.text
 	
 	protonNoExist = "info:1:0" #not valid
 	protonExist = "info:1:1" #valid
 
 	if protonNoExist in bodyResponse:
-		print("Protonmail email is " + f"{bcolors.FAIL}not valid{bcolors.ENDC}")
+		print(f"Protonmail email is {bcolors.FAIL}not valid{bcolors.ENDC}")
 
 	if protonExist in bodyResponse:
-		print("Protonmail email is " + f"{bcolors.OKGREEN}valid{bcolors.ENDC}")
+		print(f"Protonmail email is {bcolors.OKGREEN}valid{bcolors.ENDC}")
 		regexPattern1 = "2048:(.*)::" #RSA 2048-bit (Older but faster)
 		regexPattern2 = "4096:(.*)::" #RSA 4096-bit (Secure but slow)
 		regexPattern3 = "22::(.*)::" #X25519 (Modern, fastest, secure)
@@ -118,17 +112,33 @@ def checkValidityOneAccount():
 		#Download the public key attached to the email
 		invalidResponse = True
 
-		print("Do you want to download the public key attached to the email ?")
 		while invalidResponse:
 			#Input
-			responseFromUser = input("""Please enter "yes" or "no": """)
+			responseFromUser = input('Do you want to view the public key attached to the email ? [y]/n ')
 			#Text if the input is valid
-			if responseFromUser == "yes":
+			if responseFromUser.lower().startswith('y') or not responseFromUser:
 				invalidResponse = False
-				requestProtonPublicKey = requests.get('https://api.protonmail.ch/pks/lookup?op=get&search='+str(mail))
+				requestProtonPublicKey = requests.get('https://api.protonmail.ch/pks/lookup?op=get&search='+mail)
 				bodyResponsePublicKey = requestProtonPublicKey.text
 				print(bodyResponsePublicKey)
-			elif responseFromUser == "no":
+
+				saveKey = True
+
+				while saveKey:
+
+					responseFromUser = input('Do you want to download the public key attached to the email ? y/[n] ')
+
+					if responseFromUser.lower().startswith('y'):
+						with open(f'{mail}_{dtObject}.pub', 'w') as keyfile:
+							writelines(bodyResponsePublicKey)
+						saveKey = False
+					elif responseFromUser.lower().startswith('n') or not responseFromUser:
+						saveKey = False
+					else:
+						print("Invalid Input")
+						saveKey = True
+
+			elif responseFromUser.lower().startswith('n'):
 				invalidResponse = False
 			else:
 				print("Invalid Input")
@@ -141,10 +151,13 @@ def checkGeneratedProtonAccounts():
 	"""
 
 	#Input
-	print("Let's go, try to find your protonmail target:")
+	#TODO (alol) : add day/month of birth or find a bigger (?) combination creater
+	print("Let's try to find your protonmail target (leave blank if unknown):")
 	firstName = input("First name: ").lower()
-	lastName = input("Last name: ").lower()
-	yearOfBirth = input("Year of birth: ")
+	lastName  = input("Last name: ").lower()
+	dayOfBirth   = input("Day of birth: ")
+	monthOfBirth = input("Month of birth: ")
+	yearOfBirth  = input("Year of birth: ")
 	pseudo1 = input("Pseudo 1: ").lower()
 	pseudo2 = input("Pseudo 2: ").lower()
 	zipCode = input("zipCode: ")
@@ -153,67 +166,61 @@ def checkGeneratedProtonAccounts():
 	domainList = ["@protonmail.com","@protonmail.ch","@pm.me"]
 
 	#List of combinaison
-	pseudoList=[]
+	pseudoList = set()
 	
 	for domain in domainList:
 		#For domain
-		pseudoList.append(firstName+lastName+domain)
-		pseudoList.append(lastName+firstName+domain)
-		pseudoList.append(firstName[0]+lastName+domain)
-		pseudoList.append(pseudo1+domain)
-		pseudoList.append(pseudo2+domain)
-		pseudoList.append(lastName+domain)
-		pseudoList.append(firstName+lastName+yearOfBirth+domain)
-		pseudoList.append(firstName[0]+lastName+yearOfBirth+domain)
-		pseudoList.append(lastName+firstName+yearOfBirth+domain)
-		pseudoList.append(pseudo1+yearOfBirth+domain)
-		pseudoList.append(pseudo2+yearOfBirth+domain)
-		pseudoList.append(firstName+lastName+yearOfBirth[-2:]+domain)
-		pseudoList.append(firstName+lastName+yearOfBirth[-2:]+domain)
-		pseudoList.append(firstName[0]+lastName+yearOfBirth[-2:]+domain)
-		pseudoList.append(lastName+firstName+yearOfBirth[-2:]+domain)
-		pseudoList.append(pseudo1+yearOfBirth[-2:]+domain)
-		pseudoList.append(pseudo2+yearOfBirth[-2:]+domain)
-		pseudoList.append(firstName+lastName+zipCode+domain)
-		pseudoList.append(firstName[0]+lastName+zipCode+domain)
-		pseudoList.append(lastName+firstName+zipCode+domain)
-		pseudoList.append(pseudo1+zipCode+domain)
-		pseudoList.append(pseudo2+zipCode+domain)
-		pseudoList.append(firstName+lastName+zipCode[:2]+domain)
-		pseudoList.append(firstName[0]+lastName+zipCode[:2]+domain)
-		pseudoList.append(lastName+firstName+zipCode[:2]+domain)
-		pseudoList.append(pseudo1+zipCode[:2]+domain)
-		pseudoList.append(pseudo2+zipCode[:2]+domain)
-
-
-	#Remove duplicates from list
-	pseudoListUniq = [] 
-	for i in pseudoList: 
-	    if i not in pseudoListUniq: 
-	        pseudoListUniq.append(i) 
+		pseudoList.add(firstName+lastName+domain)
+		pseudoList.add(lastName+firstName+domain)
+		pseudoList.add(firstName[0]+lastName+domain)
+		pseudoList.add(pseudo1+domain)
+		pseudoList.add(pseudo2+domain)
+		pseudoList.add(lastName+domain)
+		pseudoList.add(firstName+lastName+yearOfBirth+domain)
+		pseudoList.add(firstName[0]+lastName+yearOfBirth+domain)
+		pseudoList.add(lastName+firstName+yearOfBirth+domain)
+		pseudoList.add(pseudo1+yearOfBirth+domain)
+		pseudoList.add(pseudo2+yearOfBirth+domain)
+		pseudoList.add(firstName+lastName+yearOfBirth[-2:]+domain)
+		pseudoList.add(firstName+lastName+yearOfBirth[-2:]+domain)
+		pseudoList.add(firstName[0]+lastName+yearOfBirth[-2:]+domain)
+		pseudoList.add(lastName+firstName+yearOfBirth[-2:]+domain)
+		pseudoList.add(pseudo1+yearOfBirth[-2:]+domain)
+		pseudoList.add(pseudo2+yearOfBirth[-2:]+domain)
+		pseudoList.add(firstName+lastName+zipCode+domain)
+		pseudoList.add(firstName[0]+lastName+zipCode+domain)
+		pseudoList.add(lastName+firstName+zipCode+domain)
+		pseudoList.add(pseudo1+zipCode+domain)
+		pseudoList.add(pseudo2+zipCode+domain)
+		pseudoList.add(firstName+lastName+zipCode[:2]+domain)
+		pseudoList.add(firstName[0]+lastName+zipCode[:2]+domain)
+		pseudoList.add(lastName+firstName+zipCode[:2]+domain)
+		pseudoList.add(pseudo1+zipCode[:2]+domain)
+		pseudoList.add(pseudo2+zipCode[:2]+domain)
 
 	#Remove all irrelevant combinations
+	#not sure what this does but ok ¯\_(ツ)_/¯
 	for domain in domainList:
-		if domain in pseudoListUniq: pseudoListUniq.remove(domain)
-		if zipCode+domain in pseudoListUniq: pseudoListUniq.remove(zipCode+domain)
-		if zipCode[:2]+domain in pseudoListUniq: pseudoListUniq.remove(zipCode[:2]+domain)
-		if yearOfBirth+domain in pseudoListUniq: pseudoListUniq.remove(yearOfBirth+domain)
-		if yearOfBirth[-2:]+domain in pseudoListUniq: pseudoListUniq.remove(yearOfBirth[-2:]+domain)
-		if firstName+domain in pseudoListUniq: pseudoListUniq.remove(firstName+domain)
+		if domain in pseudoList: pseudoList.remove(domain)
+		if zipCode+domain in pseudoList: pseudoList.remove(zipCode+domain)
+		if zipCode[:2]+domain in pseudoList: pseudoList.remove(zipCode[:2]+domain)
+		if yearOfBirth+domain in pseudoList: pseudoList.remove(yearOfBirth+domain)
+		if yearOfBirth[-2:]+domain in pseudoList: pseudoList.remove(yearOfBirth[-2:]+domain)
+		if firstName+domain in pseudoList: pseudoList.remove(firstName+domain)
 
 	print("===============================")
-	print("I'm trying some combinaison: " + str(len(pseudoListUniq)))
+	print("I'm trying some combinaison: " + str(len(pseudoList)))
 	print("===============================")
 
-	for pseudo in pseudoListUniq:
-		requestProton = requests.get('https://api.protonmail.ch/pks/lookup?op=index&search='+str(pseudo))
+	for pseudo in pseudoList:
+		requestProton = requests.get('https://api.protonmail.ch/pks/lookup?op=index&search='+pseudo)
 		bodyResponse = requestProton.text
 
 		protonNoExist = "info:1:0" #not valid
 		protonExist = "info:1:1" #valid
 
 		if protonNoExist in bodyResponse:
-			print(pseudo + " is " + f"{bcolors.FAIL}not valid{bcolors.ENDC}")
+			print(f"{pseudo} is {bcolors.FAIL}not valid{bcolors.ENDC}")
 
 		if protonExist in bodyResponse:
 			regexPattern1 = "2048:(.*)::"
@@ -222,21 +229,21 @@ def checkGeneratedProtonAccounts():
 			try:
 				timestamp = int(re.search(regexPattern1, bodyResponse).group(1))
 				dtObject = datetime.fromtimestamp(timestamp)
-				print(pseudo + " is " + f"{bcolors.OKGREEN}valid{bcolors.ENDC}" + " - Creation date:", dtObject)
+				print(f"{pseudo} is {bcolors.OKGREEN}valid{bcolors.ENDC}" + " - Creation date:", dtObject)
 			except:
 				pass
 
 			try:
 				timestamp = int(re.search(regexPattern2, bodyResponse).group(1))
 				dtObject = datetime.fromtimestamp(timestamp)
-				print(pseudo + " is " + f"{bcolors.OKGREEN}valid{bcolors.ENDC}" + " - Creation date:", dtObject)
+				print(f"{pseudo} is {bcolors.OKGREEN}valid{bcolors.ENDC}" + " - Creation date:", dtObject)
 			except:
 				pass
 
 			try:
 				timestamp = int(re.search(regexPattern3, bodyResponse).group(1))
 				dtObject = datetime.fromtimestamp(timestamp)
-				print(pseudo + " is " + f"{bcolors.OKGREEN}valid{bcolors.ENDC}" + " - Creation date:", dtObject)
+				print(f"{pseudo} is {bcolors.OKGREEN}valid{bcolors.ENDC}" + " - Creation date:", dtObject)
 			except:
 				pass
 
@@ -265,14 +272,22 @@ def checkIPProtonVPN():
 def main():
 	printAscii()
 	checkProtonAPIStatut()
-	printWelcome()
-	choice = input("Choose a program: ")
-	if choice == "1":
-		checkValidityOneAccount() 
-	if choice == "2":
-		checkGeneratedProtonAccounts()
-	if choice == "3":
-		checkIPProtonVPN()
+
+	run = True
+	while run:
+		printWelcome()
+		choice = input("Choose a program: ")
+		if choice == "1":
+			checkValidityOneAccount() 
+		elif choice == "2":
+			checkGeneratedProtonAccounts()
+		elif choice == "3":
+			checkIPProtonVPN()
+		elif choice.lower().startswith('q'):
+			run = False
+			print('Bye bye!')
+		else:
+			print(f'{choice} is not a valid option')
 
 if __name__ == '__main__':
 	main()
