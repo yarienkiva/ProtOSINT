@@ -10,18 +10,15 @@ ProtOSINT is separated in 3 sub-modules:
 - [2] Try to find if your target have a protonmail account by generating multiple adresses by combining information fields inputted
 - [3] Find if your IP is currently affiliate to ProtonVPN
 
-## Added features
+## [!] Added features
 I added a few minor features that aren't really worth a pull request:
 - Refactored parts of the code
 - Added option to save public key
 - Added day/month of birth to the account generator
 
-## Prerequisite
+## Prerequisites and usage
 
-   [Python 3](https://www.python.org/downloads/)
-
-## Usage
-
+The script only uses builtin python modules so you don't have to install anything, you only need `python3`.
 ```bash
 python3 protosint.py
 ```
