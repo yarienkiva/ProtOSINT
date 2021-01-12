@@ -18,7 +18,7 @@ I added a few minor features that aren't really worth a pull request:
 
 ## Prerequisites and usage
 
-The script only uses builtin python modules so you don't have to install anything, you only need `python3`.
+The script exclusively uses builtin python modules so you don't have to install anything, you only need `python3`.
 ```bash
 python3 protosint.py
 ```
