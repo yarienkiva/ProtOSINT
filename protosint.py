@@ -8,22 +8,22 @@ import ipaddress
 
 #Color setup
 class bcolors:
-    OKGREEN = '\x1b[92m'
-    WARNING = '\x1b[93m'
-    FAIL = '\x1b[91m'
-    ENDC = '\x1b[0m'
+	OKGREEN = '\x1b[92m'
+	WARNING = '\x1b[93m'
+	FAIL = '\x1b[91m'
+	ENDC = '\x1b[0m'
 
 def printAscii():
 	"""
 	ASCII Art
 	"""
 	print("""
-   ___           _            _       _   
+   ___		   _			_	   _   
   / _ \_ __ ___ | |_ ___  ___(_)_ __ | |_ 
  / /_)/ '__/ _ \| __/ _ \/ __| | '_ \| __|
 / ___/| | | (_) | || (_) \__ \ | | | | |_  (author: pixelbubble)
-\/    |_|  \___/ \__\___/|___/_|_| |_|\__| (forked by alol)
-	                                          
+\/	|_|  \___/ \__\___/|___/_|_| |_|\__| (forked by alol)
+											  
 	""")
 
 	
@@ -162,6 +162,11 @@ def checkGeneratedProtonAccounts():
 	pseudo2 = input("Pseudo 2: ").lower()
 	zipCode = input("zipCode: ")
 
+	if not any([firstName, lastName, dayOfBirth, monthOfBirth, yearOfBirth, pseudo1, pseudo2, zipCode]):
+		print('No information specified')
+		# tu m'emmerdes nico
+		return 
+
 	#Protonmail domain
 	domainList = ["@protonmail.com","@protonmail.ch","@pm.me"]
 
@@ -253,11 +258,11 @@ def checkIPProtonVPN():
 	
 	"""
 	while True:
-	    try:
-	        ip = ipaddress.ip_address(input('Enter IP address: '))
-	        break
-	    except ValueError:
-	        continue
+		try:
+			ip = ipaddress.ip_address(input('Enter IP address: '))
+			break
+		except ValueError:
+			continue
 
 	requestProton_vpn = requests.get('https://api.protonmail.ch/vpn/logicals')
 	bodyResponse = requestProton_vpn.text
