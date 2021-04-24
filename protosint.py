@@ -130,7 +130,7 @@ def checkValidityOneAccount():
 
 					if responseFromUser.lower().startswith('y'):
 						with open(f'{mail}_{dtObject}.pub', 'w') as keyfile:
-							writelines(bodyResponsePublicKey)
+							keyfile.writelines(bodyResponsePublicKey)
 						saveKey = False
 					elif responseFromUser.lower().startswith('n') or not responseFromUser:
 						saveKey = False
